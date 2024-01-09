@@ -22,14 +22,14 @@ There are 8 basic types of packets:
 5. Message: sent by client to convey some messages
 6. Accept: sent by server to acknowledge some request
 7. Reject: sent by server to reject some request
-8. Event: sent by server wehen something happens on server
+8. Event: sent by server when something happens on server
 
 ## Conventions
 
-1. "xxx", "yyy", "zzz" imply some UTF-8 String
-2. N, M, P, Q, X, Y, Z imply some Integer
-3. {x} implies some object
-4. [[ ]] implies the field is nullable
+1. `"xxx"`, `"yyy"`, `"zzz"` imply some UTF-8 String
+2. `N`, `M`, `P`, `Q`, `X`, `Y`, `Z` imply some Integer
+3. `{x}` implies some object
+4. `[[ ]]` implies the field is nullable
 5. `null` field is equavelant to the absence
 6. `|` means or
 
