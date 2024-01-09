@@ -6,8 +6,8 @@
 
 1. based on websocket
 2. game states are stored on server
-3. all requests sent to the server should be responded explicitly with acceptions or rejections
-4. timeouts imply rejections, but should be handled differently
+3. valid requests sent to the server should be responded explicitly with acceptions or rejections
+4. timeouts imply rejections
 5. operations accepted by server will be relayed to every other client, while operations rejected will not by relayed
 6. most requests sent by client should contains its `id` and `token`
 7. all requests sent by client should contain a unique `seq` number which should be contained in corrisponding responses
@@ -183,7 +183,7 @@ accepted:
 
 rejected:
 
-> note: every operation SHOULD be declared before it is committed, or it SHOULD be rejected by server
+> note: every operation SHOULD be declared before it is committed, otherwise it SHOULD be rejected by server
 
 ```
 {
@@ -225,7 +225,7 @@ sent by SERVER:
 {
     "type": "accept",
     "ack-seq": N,
-    "data": {x}
+    "data": [[{x}]]
 }
 ```
 
@@ -256,7 +256,8 @@ sent by SERVER:
 {
     "type": "event",
     "event": "xxx",
-    "data": {x}
+    "seq": M,
+    "data": [[{x}]]
 }
 ```
 
