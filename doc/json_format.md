@@ -143,7 +143,7 @@ deck model：
 
 - 以下为json格式存储的示例
 ```json
-- card对象示例
+- 对象示例
 {
     "card":[{
     "id":1,
@@ -154,7 +154,12 @@ deck model：
         ...
     },...
 }],
-    "deck":...
+    "deck":[
+        {
+            "id":"Ys3",
+            "model":""
+        }
+    ]
 }
 ```
  
