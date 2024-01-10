@@ -149,12 +149,8 @@ deck model：
     "id":1,
     "model":"poke_card",
     "properties":{ // 组件属性集合
-        "visible":{ // 是否可见
-            "type":"bool"
-        },
-        "pos_x":{// 组件位置x
-            "type":"int"
-        },
+        "visible":true,
+        "pos_x":10,
         ...
     },...
 }],
