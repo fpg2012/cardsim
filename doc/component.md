@@ -83,3 +83,45 @@
 ## Dice
 
 TODO
+
+## 组件的一些有结构的属性
+
+使用Python数据类进行表达
+
+### Pos
+
+```python
+@dataclass
+class CardsimPos:
+    x: int
+    y: int
+    z: float
+```
+
+### Size
+
+```python
+@dataclass
+class CardsimSize:
+    w: int
+    h: int
+```
+
+### Pos2f
+
+```python
+@dataclass
+class CardsimPos2f:
+    x: float # between 0 and 1
+    y: float # between 0 and 1
+```
+
+### Text
+
+```python
+@dataclass
+class Texture:
+    file: Path
+    offset: CardsimPos2f
+    size: CardsimPos2f
+```
