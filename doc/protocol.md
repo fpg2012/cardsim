@@ -282,16 +282,16 @@ relayed:
 ```
 {
     "type": "xxx",
-    "component_id_": P,
-    "changed": [[{x}]]
+    "component_ids": [P...],
+    "changed": [[ [{x}...] ]]
 }
 ```
 
-| op     | type       | component_id_                   | changed                                         |
+| op     | type       | component_ids                  | changed                                         |
 | ------ | ---------- | ------------------------------- | ----------------------------------------------- |
-| add    | `"add"`    | `id_` of the changed component  | content of the component                        |
-| remove | `"remove"` | `id_`of the removed component   | `null`                                          |
-| modify | `"modify"` | `id_` of the modified component | content of the component **after** modification |
+| add    | `"add"`    | list of `id_` of the changed component  | list of contents of the component                        |
+| remove | `"remove"` | list of `id_`of the removed component   | `null`                                          |
+| modify | `"modify"` | list of `id_` of the modified component | list of contents of the component **after** modification |
 
 ### Possible reasons for rejection
 
