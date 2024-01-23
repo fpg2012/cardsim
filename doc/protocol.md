@@ -1,6 +1,6 @@
 # Protocol
 
-> version `0.1`
+> version `0.1.1`
 
 ## Overview
 
@@ -9,7 +9,7 @@
 3. valid requests sent to the server should be responded explicitly with acceptions or rejections
 4. timeouts imply rejections
 5. operations accepted by server will be relayed to every other client, while operations rejected will not by relayed
-6. most requests sent by client should contains its `id` and `token`
+6. most requests sent by client should contains its `id_` and `token`
 7. all requests sent by client should contain a unique `seq` number which should be contained in corrisponding responses
 8. server should ignore all requests whose id and token are not match
 
@@ -46,11 +46,14 @@ sent by CLIENT:
 {
     "type": "join",
     "username": "xxx",
-    "id": 0,
+    "id_": 0,
+    "room_id_": R,
     "token": 0,
     "seq": N
 }
 ```
+
+> if `room_id_` is 0, server will create a new room
 
 accepcted:
 
@@ -58,10 +61,11 @@ accepcted:
 {
     "type": "accpet",
     "data": {
-        "id": P,
+        "id_": P,
         "token": Q,
         "ack-seq": N,
-        "game-state": {x}
+        "game-state": {x},
+        "room_id_": R
     }
 }
 ```
@@ -71,7 +75,7 @@ rejected:
 ```
 {
     "type: "reject",
-    "ack-seq": N,
+    "ack_seq": N,
     "reason": [["xxx"]]
 }
 ```
@@ -86,11 +90,19 @@ relayed:
     "event": "join",
     "data": {
         "username": "xxx",
-        "id": P
+        "id_": P
     },
     "seq": M
 }
 ```
+
+### Possible reasons for rejections
+
+| reason            |                        |
+| ----------------- | ---------------------- |
+| `"username_used"` | username has been used |
+| `"room_invalid"`  | room_id_ is invalid    |
+| `null`            | others                 |
 
 ## Quit
 
@@ -102,7 +114,7 @@ sent by CLIENT:
 ```
 {
     "type": "quit",
-    "id": P,
+    "id_": P,
     "token": Q,
     "seq": N
 }
@@ -113,7 +125,7 @@ accepted:
 ```
 {
     "type": "accept",
-    "ack-seq": N
+    "ack_seq": N
 }
 ```
 
@@ -128,7 +140,65 @@ relayed:
     "type": "event",
     "event": "quit",
     "data": {
-        "id": P
+        "id_": P
+    }
+    "seq": M
+}
+```
+
+## Kick
+
+- path: CLIENT -> SERVER -> Other CLIENTS
+
+- when: CLIENT (room admin) decided to kick a CLIENT
+
+sent by CLIENT:
+
+```
+
+```
+
+{
+    "type": "kick",
+    "id_": P,
+    "to_kick_id_": P',
+    "token": Q,
+    "seq": N
+}
+
+```
+
+```
+
+accepted:
+
+```
+{
+    "type": "accept",
+    "ack_seq": N
+}
+```
+
+rejected:
+
+```
+{
+    "type: "reject",
+    "ack_seq": N,
+    "reason": [["xxx"]]
+}
+```
+
+or IGNORE
+
+relayed:
+
+```
+{
+    "type": "event",
+    "event": "kick",
+    "data": {
+        "id_": P
     }
     "seq": M
 }
@@ -144,11 +214,14 @@ sent by CLIENT:
 ```
 {
     "type: "join",
-    "id": P,
+    "id_": P,
     "token": Q,
-    "username": "xxx"
+    "username": "xxx",
+    "room_id_": R
 }
 ```
+
+> `room_id_` should not be zero
 
 accepted & rejected & relayed:
 
@@ -164,10 +237,10 @@ sent by CLIENT:
 ```
 {
     "type": "operate",
-    "id": P,
+    "id_": P,
     "token": Q,
     "op": {x},
-    "op-state": "declare" | "commit",
+    "op_state": "declare" | "commit",
     "seq": N
 }
 ```
@@ -177,7 +250,7 @@ accepted:
 ```
 {
     "type": "accept",
-    "ack-seq": N
+    "ack_seq": N
 }
 ```
 
@@ -188,7 +261,7 @@ rejected:
 ```
 {
     "type": "reject",
-    "ack-seq": N,
+    "ack_seq": N,
     "reason": [["xxx"]]
 }
 ```
@@ -202,13 +275,37 @@ relayed:
     "type": "event",
     "event": "operate",
     "data": {
-        "id": P,
+        "id_": P,
         "op": {x},
-        "op-state": "declare" | "commit"
+        "op_state": "declare" | "commit"
     },
     seq: M
 }
 ```
+
+### Structure of `"op"` field
+
+```
+{
+    "type": "xxx",
+    "component_id_": P,
+    "changed": [[{x}]]
+}
+```
+
+| op     | type       | component_id_                   | changed                                         |
+| ------ | ---------- | ------------------------------- | ----------------------------------------------- |
+| add    | `"add"`    | `id_` of the changed component  | content of the component                        |
+| remove | `"remove"` | `id_`of the removed component   | `null`                                          |
+| modify | `"modify"` | `id_` of the modified component | content of the component **after** modification |
+
+### Possible reasons for rejection
+
+| reason         |                                           |
+| -------------- | ----------------------------------------- |
+| `"occupied"`   | the component is changing by another peer |
+| `"invalid_id"` | the `component_id` is invalid             |
+| `null`         | others                                    |
 
 ## Message
 
@@ -224,11 +321,10 @@ sent by SERVER:
 ```
 {
     "type": "accept",
-    "ack-seq": N,
+    "ack_seq": N,
     "data": [[{x}]]
 }
 ```
-
 
 ## Reject
 
@@ -240,7 +336,7 @@ sent by SERVER:
 ```
 {
     "type": "reject",
-    "ack-seq": N,
+    "ack_seq": N,
     "reason": [["xxx"]]
 }
 ```
@@ -260,4 +356,3 @@ sent by SERVER:
     "data": [[{x}]]
 }
 ```
-
