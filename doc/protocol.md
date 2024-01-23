@@ -155,9 +155,6 @@ relayed:
 sent by CLIENT:
 
 ```
-
-```
-
 {
     "type": "kick",
     "id_": P,
@@ -165,9 +162,6 @@ sent by CLIENT:
     "token": Q,
     "seq": N
 }
-
-```
-
 ```
 
 accepted:
