@@ -1,12 +1,28 @@
-[gd_scene load_steps=3 format=3 uid="uid://deu24lw0und3c"]
+[gd_scene load_steps=5 format=3 uid="uid://deu24lw0und3c"]
 
 [ext_resource type="Script" path="res://main_scene.gd" id="1_l7gqa"]
+[ext_resource type="PackedScene" uid="uid://dggdd2bdwqf3f" path="res://connection_ui.tscn" id="2_2n0wk"]
 [ext_resource type="Script" path="res://GridSystem.gd" id="2_6etok"]
+[ext_resource type="Script" path="res://WebsocketHandler.gd" id="3_wvjyw"]
 
 [node name="MainScene" type="Node2D"]
 script = ExtResource("1_l7gqa")
+metadata/_edit_horizontal_guides_ = [320.0]
+metadata/_edit_vertical_guides_ = [600.0]
+
+[node name="ConnectionUI" parent="." instance=ExtResource("2_2n0wk")]
+z_index = 100
+position = Vector2(369, 220)
 
 [node name="GridSystem" type="Node2D" parent="."]
 script = ExtResource("2_6etok")
 
 [node name="Content" type="Node2D" parent="."]
+
+[node name="WebsocketHandler" type="Node" parent="."]
+script = ExtResource("3_wvjyw")
+
+[connection signal="start_connection" from="." to="WebsocketHandler" method="_on_start_connection"]
+[connection signal="connect_button_pressed" from="ConnectionUI" to="." method="_on_connection_ui_connect_button_pressed"]
+[connection signal="connection_failed" from="WebsocketHandler" to="." method="_on_connection_failed"]
+[connection signal="connection_successed" from="WebsocketHandler" to="." method="_on_connection_successed"]

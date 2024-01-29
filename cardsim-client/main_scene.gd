@@ -10,6 +10,8 @@ var my_square_scene = preload("res://square.tscn")
 var content = get_node("Content")
 @onready
 var grid = get_node("GridSystem")
+@onready
+var websocket_handler = get_node("WebsocketHandler")
 
 var selected_squares = []
 var squares = {}
@@ -19,8 +21,14 @@ var dragging_right = false
 var dragging_left = false
 var dragging_left_square = false
 
+var enable_input = false
+
 # signals
-signal start_dragging(node)
+# dragging
+signal dragging_node_start(nodes)
+signal dragging_node_end(nodes)
+# network
+signal start_connection(url)
 
 # utility functions
 func round_position(pos: Vector2):
@@ -138,7 +146,22 @@ func handle_mouse_motion(pos: Vector2, d_pos: Vector2):
 			var node = squares[square]
 			node.position = content.to_local(content.to_global(node.position) + d_pos)
 
+# callbacks
+func _on_connection_failed(result):
+	print('failed to connect to server, code', result)
+	set_process(false)
+
+func _on_connection_successed():
+	set_process(true)
+	enable_input = true
+	$ConnectionUI.visible = false
+
+func _on_connection_ui_connect_button_pressed(server, username, room):
+	start_connection.emit()
+
 func _unhandled_input(event):
+	if !enable_input:
+		return
 	if event is InputEventMouseButton:
 		if event.button_index == MOUSE_BUTTON_RIGHT:
 			handle_right_click(event.is_pressed())
@@ -158,9 +181,10 @@ func _unhandled_input(event):
 
 # Called when the node enters the scene tree for the first time.
 func _ready():
+	#websocket_handler.connection_failed.connect(_on_connect_failure)
+	#self.start_connection.connect(websocket_handler._on_start_connection)
 	pass
 
 # Called every frame. 'delta' is the elapsed time since the previous frame.
 func _process(delta):
-	# print(dragging_left)
 	pass
