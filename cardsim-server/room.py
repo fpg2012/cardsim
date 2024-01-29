@@ -1,0 +1,3 @@
+class CardsimRoom:
+    pass
+
