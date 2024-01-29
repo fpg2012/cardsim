@@ -13,7 +13,7 @@
 7. all requests sent by client should contain a unique `seq` number which should be contained in corrisponding responses
 8. server should ignore all requests whose id and token are not match
 
-There are 8 basic types of packets:
+There are 9 basic types of packets:
 
 1. Join: sent by client at first join
 2. Quit: sent by client when quitting
@@ -23,6 +23,7 @@ There are 8 basic types of packets:
 6. Accept: sent by server to acknowledge some request
 7. Reject: sent by server to reject some request
 8. Event: sent by server when something happens on server
+9. Kick
 
 ## Conventions
 
@@ -44,7 +45,7 @@ sent by CLIENT:
 
 ```
 {
-    "type": "join",
+    "action": "join",
     "username": "xxx",
     "id_": 0,
     "room_id_": R,
@@ -59,12 +60,12 @@ accepcted:
 
 ```
 {
-    "type": "accpet",
+    "action": "accept",
     "data": {
         "id_": P,
         "token": Q,
-        "ack-seq": N,
-        "game-state": {x},
+        "ack_seq": N,
+        "game_state": {x},
         "room_id_": R
     }
 }
@@ -86,7 +87,7 @@ relayed:
 
 ```
 {
-    "type": "event",
+    "action": "event",
     "event": "join",
     "data": {
         "username": "xxx",
@@ -113,7 +114,7 @@ sent by CLIENT:
 
 ```
 {
-    "type": "quit",
+    "action": "quit",
     "id_": P,
     "token": Q,
     "seq": N
@@ -124,7 +125,7 @@ accepted:
 
 ```
 {
-    "type": "accept",
+    "action": "accept",
     "ack_seq": N
 }
 ```
@@ -137,7 +138,7 @@ relayed:
 
 ```
 {
-    "type": "event",
+    "action": "event",
     "event": "quit",
     "data": {
         "id_": P
@@ -156,7 +157,7 @@ sent by CLIENT:
 
 ```
 {
-    "type": "kick",
+    "action": "kick",
     "id_": P,
     "to_kick_id_": P',
     "token": Q,
@@ -168,7 +169,7 @@ accepted:
 
 ```
 {
-    "type": "accept",
+    "action": "accept",
     "ack_seq": N
 }
 ```
@@ -189,7 +190,7 @@ relayed:
 
 ```
 {
-    "type": "event",
+    "action": "event",
     "event": "kick",
     "data": {
         "id_": P
@@ -230,7 +231,7 @@ sent by CLIENT:
 
 ```
 {
-    "type": "operate",
+    "action": "operate",
     "id_": P,
     "token": Q,
     "op": {x},
@@ -243,7 +244,7 @@ accepted:
 
 ```
 {
-    "type": "accept",
+    "action": "accept",
     "ack_seq": N
 }
 ```
@@ -254,7 +255,7 @@ rejected:
 
 ```
 {
-    "type": "reject",
+    "action": "reject",
     "ack_seq": N,
     "reason": [["xxx"]]
 }
@@ -266,7 +267,7 @@ relayed:
 
 ```
 {
-    "type": "event",
+    "action": "event",
     "event": "operate",
     "data": {
         "id_": P,
@@ -281,7 +282,7 @@ relayed:
 
 ```
 {
-    "type": "xxx",
+    "action": "xxx",
     "component_ids": [P...],
     "changed": [[ [{x}...] ]]
 }
@@ -314,7 +315,7 @@ sent by SERVER:
 
 ```
 {
-    "type": "accept",
+    "action": "accept",
     "ack_seq": N,
     "data": [[{x}]]
 }
@@ -329,7 +330,7 @@ sent by SERVER:
 
 ```
 {
-    "type": "reject",
+    "action": "reject",
     "ack_seq": N,
     "reason": [["xxx"]]
 }
@@ -344,7 +345,7 @@ sent by SERVER:
 
 ```
 {
-    "type": "event",
+    "action": "event",
     "event": "xxx",
     "seq": M,
     "data": [[{x}]]
