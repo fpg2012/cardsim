@@ -157,6 +157,9 @@ func _on_connection_successed():
 	$ConnectionUI.visible = false
 
 func _on_connection_ui_connect_button_pressed(server, username, room):
+	websocket_handler.url = server
+	websocket_handler.username = username
+	websocket_handler.room_id = room
 	start_connection.emit()
 
 func _unhandled_input(event):
@@ -181,8 +184,6 @@ func _unhandled_input(event):
 
 # Called when the node enters the scene tree for the first time.
 func _ready():
-	#websocket_handler.connection_failed.connect(_on_connect_failure)
-	#self.start_connection.connect(websocket_handler._on_start_connection)
 	pass
 
 # Called every frame. 'delta' is the elapsed time since the previous frame.

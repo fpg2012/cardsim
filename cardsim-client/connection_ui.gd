@@ -58,26 +58,25 @@ func _on_button_pressed():
 	if validate_information():
 		connect_button_pressed.emit(server_edit.text, username_edit.text, int(room_edit.text))
 
+func set_invalid(lineedit: LineEdit, is_valid: bool = false):
+	if is_valid:
+		lineedit.remove_theme_color_override("font_color")
+		lineedit.remove_theme_color_override("selection_color")
+	else:
+		lineedit.add_theme_color_override("font_color", Color.LIGHT_CORAL)
+		lineedit.add_theme_color_override("selection_color", Color.LIGHT_CORAL)
+
 func _on_server_editor_text_changed(new_text):
 	server_edit.text = new_text.strip_edges()
-	if not validate_server():
-		server_edit.add_theme_color_override("font_color", Color.LIGHT_CORAL)
-	else:
-		server_edit.remove_theme_color_override("font_color")
+	set_invalid(server_edit, validate_server())
 	server_edit.caret_column = server_edit.text.length()
 
 func _on_username_editor_text_changed(new_text):
 	username_edit.text = new_text.strip_edges()
-	if not validate_username():
-		username_edit.add_theme_color_override("font_color", Color.LIGHT_CORAL)
-	else:
-		username_edit.remove_theme_color_override("font_color")
+	set_invalid(username_edit, validate_username())
 	username_edit.caret_column = username_edit.text.length()
 
 func _on_room_editor_text_changed(new_text):
 	room_edit.text = new_text.strip_edges()
-	if not validate_room():
-		room_edit.add_theme_color_override("font_color", Color.LIGHT_CORAL)
-	else:
-		room_edit.remove_theme_color_override("font_color")
+	set_invalid(room_edit, validate_room())
 	room_edit.caret_column = room_edit.text.length()
