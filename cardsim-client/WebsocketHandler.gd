@@ -68,6 +68,7 @@ func send(request: String):
 	socket.send_text(request)
 
 func dispatch(packet: Dictionary):
+	print(packet)
 	if packet['action'] == 'event':
 		handle_event(packet)
 	elif packet['action'] == 'accept':

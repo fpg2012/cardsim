@@ -1,6 +1,20 @@
 from dataclasses import dataclass
 from dataclasses_json import dataclass_json
-from typing import Optional
+from typing import Optional, Any
+
+@dataclass_json
+@dataclass(kw_only=True)
+class Operation:
+    action: str
+    component_id_: int
+    changed: Optional[dict]
+
+@dataclass_json
+@dataclass(kw_only=True)
+class OperationRelayedData:
+    id_: int
+    ops: list[Operation]
+    op_state: str
 
 @dataclass_json
 @dataclass(kw_only=True)
@@ -25,7 +39,9 @@ class QuitMessage:
 @dataclass(kw_only=True)
 class OperateMessage:
     action: str = "operate"
-    op: Optional[dict]
+    id_: int
+    token: int
+    ops: Optional[list[Operation]]
     op_state: str
     room_id_: int
     seq: int

@@ -13,7 +13,7 @@ class NumberPool:
         new_number = 0
         while not ok:
             new_number = hash(reference) * random.randint(1, 100) // random.randint(1, 100)
-            if new_number not in self.pool and new_number != 0:
+            if new_number not in self.pool and self.validate(new_number):
                 ok = True
         return new_number
     

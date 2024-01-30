@@ -1,7 +1,14 @@
 from dataclasses import dataclass
-from typing import Union, Optional, Dict
+from dataclasses_json import dataclass_json
+from typing import Union, Optional, Iterable
 import websockets
 from utils import NumberPool
+
+@dataclass_json
+@dataclass
+class CardsimUserPublicProfile:
+    id_: int
+    username: str
 
 @dataclass
 class CardsimUser:
@@ -11,13 +18,17 @@ class CardsimUser:
     websocket: websockets.WebSocketServerProtocol
     seq: int
 
-class CardsimUserPool:
+    @property
+    def public_profile(self) -> CardsimUserPublicProfile:
+        return CardsimUserPublicProfile(id_=self.id_, username=self.username)
+
+class CardsimUserPool(Iterable):
 
     ERROR_OK = 0
     ERROR_INVALID_USERNAME = 1
 
     def __init__(self) -> None:
-        self.users: Dict[CardsimUser] = dict()
+        self.users: dict[int, CardsimUser] = dict()
         self.usernames: set[str] = set()
         self.id_pool: NumberPool = NumberPool()
         self.token_pool: NumberPool = NumberPool()
@@ -44,10 +55,17 @@ class CardsimUserPool:
         self.id_pool.add(id_)
         self.token_pool.add(token)
         return new_user
+    
+    def public_profiles(self):
+        for user in self.users.values():
+            yield user.public_profile
         
     def __contains__(self, user: CardsimUser):
-        return user in self.users.values
+        return user in self.users.values()
     
     def __iter__(self):
         for user in self.users.values():
             yield user
+    
+    def __getitem__(self, index: int) -> CardsimUser:
+        return self.users[index]
