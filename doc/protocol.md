@@ -227,6 +227,10 @@ same as Join
 - path: CLIENT -> SERVER -> Other CLIENTS
 - when: CLIENT decides to operate or finish operating
 
+> note: Operation `remove` and `modify` SHOULD be declared before it is committed, otherwise it SHOULD be rejected by server
+> 
+> Operation `add` does NOT need to declare
+
 sent by CLIENT:
 
 ```
@@ -234,9 +238,10 @@ sent by CLIENT:
     "action": "operate",
     "id_": P,
     "token": Q,
-    "op": {x},
+    "ops": [{Operation}],
     "op_state": "declare" | "commit",
-    "seq": N
+    "seq": N,
+    "room_id_": R
 }
 ```
 
@@ -245,13 +250,14 @@ accepted:
 ```
 {
     "action": "accept",
-    "ack_seq": N
+    "ack_seq": N,
+    "data": [[ {OperationRelayedData} ]]
 }
 ```
 
-rejected:
+> note: `"data"` is `null` IF AND ONLY IF `"op_state"` is `"declare"` in the request
 
-> note: every operation SHOULD be declared before it is committed, otherwise it SHOULD be rejected by server
+rejected:
 
 ```
 {
@@ -261,6 +267,8 @@ rejected:
 }
 ```
 
+> note: all operations in request will be rejected together even if their is only 1 invalid operation among them!
+
 or IGNORE
 
 relayed:
@@ -269,37 +277,64 @@ relayed:
 {
     "action": "event",
     "event": "operate",
-    "data": {
-        "id_": P,
-        "op": {x},
-        "op_state": "declare" | "commit"
-    },
+    "data": {OperationRelayedData},
     seq: M
 }
 ```
 
-### Structure of `"op"` field
+### Operation and OperationRelayeData
+
+Operation:
 
 ```
 {
-    "action": "xxx",
-    "component_ids": [P...],
-    "changed": [[ [{x}...] ]]
+    action: "add" | "remove" | "modify",
+    component_id_: P,
+    changed = [[ {Component} ]]
 }
 ```
 
-| op     | type       | component_ids                  | changed                                         |
+OperationRelayedData:
+
+```
+{
+    id_: P,
+    ops: [{Opration}...],
+    op_state = "declare" | "commit"
+}
+```
+
+a.k.a.
+
+```python
+@dataclass_json
+@dataclass(kw_only=True)
+class Operation:
+    action: str
+    component_id_: int
+    changed: Optional[dict]
+
+@dataclass_json
+@dataclass(kw_only=True)
+class OperationRelayedData:
+    id_: int
+    ops: list[Operation]
+    op_state: str
+```
+
+| action     | type       | component_ids                  | changed                                         |
 | ------ | ---------- | ------------------------------- | ----------------------------------------------- |
-| add    | `"add"`    | list of `id_` of the changed component  | list of contents of the component                        |
+| add    | `"add"`    | `0`  | list of contents of the component                        |
 | remove | `"remove"` | list of `id_`of the removed component   | `null`                                          |
 | modify | `"modify"` | list of `id_` of the modified component | list of contents of the component **after** modification |
 
 ### Possible reasons for rejection
 
+
 | reason         |                                           |
 | -------------- | ----------------------------------------- |
-| `"occupied"`   | the component is changing by another peer |
-| `"invalid_id"` | the `component_id` is invalid             |
+| `"occupied_by_others_or_invalid_component_id"` | the component is changing by another peer |
+| `"not_declared_or_changed_is_none"`   | the operation has not been declared or `changed` is `null` |
 | `null`         | others                                    |
 
 ## Message
