@@ -17,6 +17,7 @@ class CardsimUser:
     username: str
     websocket: websockets.WebSocketServerProtocol
     seq: int
+    online: bool = True
 
     @property
     def public_profile(self) -> CardsimUserPublicProfile:

@@ -1,6 +1,7 @@
 from typing import Union, Optional, Iterable
 import websockets
 from utils import NumberPool
+import time
 
 class CardsimComponentPool(Iterable):
 
@@ -17,7 +18,7 @@ class CardsimComponentPool(Iterable):
         add `component` and return its `id_`
         '''
         
-        id_ = self.id_pool.allocate(component)
+        id_ = self.id_pool.allocate(time.time())
 
         new_component = component
         self.components[id_] = new_component

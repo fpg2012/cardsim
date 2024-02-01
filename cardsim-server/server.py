@@ -30,6 +30,8 @@ class CardsimServer:
                 print('message', message)
                 try:
                     request = json.loads(message)
+                    if type(request) != dict:
+                        raise json.JSONDecodeError
                     await self.dispatch(request, websocket)
                 except json.JSONDecodeError:
                     print('ignore: ', json.JSONDecodeError, message)
@@ -39,7 +41,7 @@ class CardsimServer:
         except websockets.ConnectionClosedError as e:
             print('connection closed: ', websocket.remote_address)
     
-    async def dispatch(self, request, websocket):
+    async def dispatch(self, request: dict, websocket):
         '''
         dispatch a request to a handler according to its `action` field 
         '''
@@ -58,8 +60,14 @@ class CardsimServer:
         '''
         if packet is None:
             return
-        await user.websocket.send(packet)
-        await self.increment_seq()
+        print('sent_to_single', user.public_profile, packet)
+        try:
+            await user.websocket.send(packet)
+            await self.increment_seq()
+        except websockets.exceptions.ConnectionClosedError as e:
+            print('---ignore---')
+            traceback.print_exception(e)
+            print('------')
 
     async def send_to_group(self, users: Iterable[CardsimUser], packet):
         '''
@@ -68,7 +76,15 @@ class CardsimServer:
         '''
         if packet is None:
             return
-        await self.increment_seq()
+        print('send_to_group', packet)
+        
+        for user in users:
+            try:
+                await user.websocket.send(packet)
+                await self.increment_seq()
+                print('done:', user.public_profile)
+            except websockets.exceptions.ConnectionClosedError as e:
+                print('fail:', user.public_profile)
     
     async def handle_join(self, request, websocket):
         '''
@@ -121,12 +137,13 @@ class CardsimServer:
         packet: OperateMessage = OperateMessage.from_dict(request)
         auth = await self.is_authenticated(packet.id_, packet.token)
         if not auth:
+            print('not auth')
             return
         match packet.op_state:
             case 'declare':
-                await self.handle_operate_declare(self, packet, websocket)
+                await self.handle_operate_declare(packet, websocket)
             case 'commit':
-                await self.handle_operate_commit(self, packet, websocket)
+                await self.handle_operate_commit(packet, websocket)
             case _:
                 pass # error
     
@@ -143,7 +160,7 @@ class CardsimServer:
                 case 'add':
                     pass
                 case 'remove' | 'modify':
-                    ok = ok and not self.component_pool.is_occupied(op.component_id)
+                    ok = ok and not self.component_pool.is_occupied(op.component_id_)
                 case _:
                     pass # error
         if not ok:
@@ -163,10 +180,10 @@ class CardsimServer:
             for op in packet.ops:
                 match op.action:
                     case 'add':
-                        pass
+                        actions.append(Operation(action='add', component_id_=op.component_id_, changed=None))
                     case 'remove' | 'modify':
-                        self.component_pool.grab(op.component_id, packet.id_)
-                        actions.append(Operation(id_=packet.id_, component_id_=op.component_id_, changed=None))
+                        self.component_pool.grab(op.component_id_, packet.id_)
+                        actions.append(Operation(action='remove', component_id_=op.component_id_, changed=None))
                     case _:
                         pass # error
         response = AcceptMessage(data=None, seq=self.seq, ack_seq=packet.seq)
@@ -195,9 +212,9 @@ class CardsimServer:
                 case 'add':
                     ok = ok and op.changed is not None
                 case 'remove':
-                    ok = ok and self.component_pool.is_occupied_by(op.component_id, packet.id_)
+                    ok = ok and self.component_pool.is_occupied_by(op.component_id_, packet.id_)
                 case 'modify':
-                    ok = ok and self.component_pool.is_occupied_by(op.component_id, packet.id_) and op.changed is not None
+                    ok = ok and self.component_pool.is_occupied_by(op.component_id_, packet.id_) and op.changed is not None
                 case _:
                     pass # error
         if not ok:
@@ -228,8 +245,8 @@ class CardsimServer:
                     case _:
                         pass # error
         
-        response = AcceptMessage(data=OperationRelayedData(id_=packet.id_, ops=actions, op_state='commit').to_dict())
-        relayed = EventMessage(data=OperationRelayedData(id_=packet.id_, ops=actions, op_state='commit').to_dict())
+        response = AcceptMessage(seq=self.seq, ack_seq=packet.seq, data=OperationRelayedData(id_=packet.id_, ops=actions, op_state='commit').to_dict())
+        relayed = EventMessage(event='operate', seq=self.seq, data=OperationRelayedData(id_=packet.id_, ops=actions, op_state='commit').to_dict())
         await asyncio.gather(
             self.send_to_single(self.user_pool[packet.id_], response.to_json()),
             self.send_to_group(
@@ -246,6 +263,9 @@ class CardsimServer:
     async def increment_seq(self):
         async with self.seq_lock:
             self.seq += 1
+    
+    def user_leave(self, user: CardsimUser):
+        pass
     
     @property
     def game_state(self) -> dict:
