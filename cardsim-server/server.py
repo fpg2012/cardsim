@@ -83,8 +83,8 @@ class CardsimServer:
                 await user.websocket.send(packet)
                 await self.increment_seq()
                 print('done:', user.public_profile)
-            except websockets.exceptions.ConnectionClosedError as e:
-                print('fail:', user.public_profile)
+            except Exception as e:
+                print('fail:', user.public_profile, e)
     
     async def handle_join(self, request, websocket):
         '''
@@ -238,9 +238,11 @@ class CardsimServer:
                         actions.append(op)
                     case 'remove':
                         self.component_pool.remove_component(op.component_id_)
+                        self.component_pool.release(op.component_id_)
                         actions.append(op)
                     case 'modify':
                         self.component_pool.update_component(op.component_id_, op.changed)
+                        self.component_pool.release(op.component_id_)
                         actions.append(op)
                     case _:
                         pass # error

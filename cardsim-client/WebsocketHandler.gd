@@ -79,10 +79,15 @@ func handle_reject(packet):
 	if game_connection_state == GameConnectionState.STATE_CONNECTING_WAIT_FOR_ACK:
 		connection_failed.emit(null)
 	elif game_connection_state == GameConnectionState.STATE_ESTABLISHED:
-		var request = request_buffer[packet.ack_seq]
+		var request = request_buffer[int(packet.ack_seq)]
 		if request.action == 'operate':
-			var callback = request_callback[request.seq]
-			callback.call(false, packet.data.ops)
+			var callback = request_callback[int(request.seq)]
+			if request.op_state == 'declare':
+				callback.call(false)
+			elif request.op_state == 'commit':
+				callback.call(false, null)
+			else:
+				pass # error
 		request_buffer.erase(request.seq)
 		request_callback.erase(request.seq)
 
@@ -148,6 +153,10 @@ func dispatch(packet: Dictionary):
 		handle_event(packet)
 	elif packet['action'] == 'accept':
 		handle_accept(packet)
+	elif packet['action'] == 'reject':
+		handle_reject(packet)
+	else:
+		pass # error
 
 func log_info():
 	return '[%s-%d]' % [self.username, self.id]
@@ -223,6 +232,34 @@ func _on_main_scene_square_removed(component_id_s):
 			var seq2 = self.queue_operate_packet_commit(ops)
 			request_callback[seq2] = func (ok, response_ops):
 				if !ok:
-					cancel_ops.emit(response_ops)
+					cancel_ops.emit(ops)
 				else:
 					pass
+
+func _on_main_scene_dragging_node_end(nodes):
+	var ops = []
+	for node in nodes:
+		ops.append({
+			"action": "modify",
+			"component_id_": node.component_id_,
+			"changed": node.to_dict()
+		})
+	var seq = queue_operate_packet_commit(ops)
+	request_callback[seq] = func (ok, response_ops):
+		if !ok:
+			cancel_ops.emit(ops)
+		else:
+			pass
+
+func _on_main_scene_dragging_node_start(component_id_s):
+	var ops = []
+	for component_id_ in component_id_s:
+		ops.append({
+			"action": "modify",
+			"component_id_": component_id_,
+			"changed": null
+		})
+	var seq = queue_operate_packet_declare(ops)
+	request_callback[seq] = func (ok):
+		if !ok:
+			cancel_ops.emit(ops)

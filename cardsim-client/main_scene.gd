@@ -19,18 +19,24 @@ var squares = {} # component_id_ => square
 var squares_last_state = {} # component_id_ => square
 
 # dragging states
+enum {
+	STATE_NOT_DRAGGING = 0,
+	STATE_START_DRAGGING = 1,
+	STATE_DRAGGING = 2
+}
+
 var dragging_right = false
 var dragging_left = false
-var dragging_left_square = false
+var dragging_left_square = STATE_NOT_DRAGGING
 
 var enable_input = false
 
 # signals
 # dragging
-signal dragging_node_start(nodes)
+signal dragging_node_start(component_id_s)
 signal dragging_node_end(nodes)
 # add and remove
-signal square_added(nodes: Array[Dictionary],)
+signal square_added(nodes)
 signal square_removed(component_id_s)
 signal square_modify(nodes)
 # network
@@ -76,16 +82,28 @@ func deselected(node):
 		node.set_selected(false)
 		selected_squares.erase(node.component_id_)
 
+func freeze(node):
+	deselected(node)
+	node.set_freeze(true)
+
+func unfreeze(node):
+	node.set_freeze(false)
+
 func deselect_all():
 	for component_id_ in selected_squares:
 		squares[component_id_].set_selected(false)
 	selected_squares.clear()
 
 func delete_selected():
+	save_last_state(selected_squares)
 	for component_id_ in selected_squares:
 		_delete_square_by_id(component_id_, false)
 	square_removed.emit(selected_squares.duplicate(true))
 	selected_squares.clear()
+
+func save_last_state(component_id_s):
+	for component_id_ in component_id_s:
+		squares_last_state[component_id_] = squares[component_id_].to_dict()
 
 # add & delete
 func _add_square(pos: Vector2):
@@ -114,27 +132,38 @@ func delete_square_by_pos_local(pos: Vector2):
 func _delete_square_by_id(component_id_: int, deselect: bool = true):
 	var node = squares[component_id_]
 	content.remove_child(node)
-	node.queue_free()
 	squares.erase(component_id_)
 	if deselect:
 		selected_squares.erase(component_id_)
 
 func delete_square_by_id_local(component_id_):
+	save_last_state([component_id_])
 	_delete_square_by_id(component_id_)
 	square_removed.emit([component_id_])
 
+# should not use this function to update component_id_
+func update_square_by_id_remote(component_id_: int, node_model):
+	var node = squares[component_id_]
+	node.from_dict(node_model)
+	print(self.log_info() + 'remote update ' + str(node_model))
+	return node
+
 func rollback(component_id_):
-	pass
+	print(self.log_info(), 'rollback: ', component_id_)
+	if component_id_ not in squares_last_state.keys():
+		_delete_square_by_id(component_id_)
+	else:
+		update_square_by_id_remote(component_id_, squares_last_state[component_id_])
 
 # dragging related functions
 func set_dragging_right(is_enabled: bool):
-	dragging_right = is_enabled # start dragging right
+	self.dragging_right = is_enabled # start dragging right
 
 func set_dragging_left(is_enabled: bool):
-	dragging_left = is_enabled # start dragging left
+	self.dragging_left = is_enabled # start dragging left
 
-func set_dragging_left_sqaure(is_enabled: bool):
-	dragging_left_square = is_enabled
+func set_dragging_left_sqaure(drag_state: int):
+	self.dragging_left_square = drag_state
 
 # input handlers
 func handle_mouse_wheel(up: int, pos: Vector2):
@@ -142,10 +171,14 @@ func handle_mouse_wheel(up: int, pos: Vector2):
 		zoom(grid_width + up, pos)
 
 func handle_right_click(is_pressed: bool):
+	if dragging_left:
+		return
 	set_dragging_right(is_pressed)
 	deselect_all()
 
 func handle_left_click(pos: Vector2):
+	if dragging_right:
+		return
 	var local_pos = round_position(content.to_local(pos))
 	set_dragging_left(true)
 	var node = query_square_by_pos(local_pos)
@@ -154,27 +187,39 @@ func handle_left_click(pos: Vector2):
 			add_square_local(local_pos)
 		deselect_all()
 	else: # click on square
-		set_dragging_left_sqaure(true)
-		if !Input.is_key_pressed(KEY_CTRL):
+		if !node.freezed:
+			set_dragging_left_sqaure(STATE_START_DRAGGING)
+			if !Input.is_key_pressed(KEY_CTRL):
+				deselect_all()
+			select(node)
+		else:
 			deselect_all()
-		select(node)
 
 func handle_left_release(pos: Vector2):
 	set_dragging_left(false)
-	if dragging_left_square:
-		set_dragging_left_sqaure(false)
+	if dragging_left_square == STATE_DRAGGING || dragging_left_square == STATE_START_DRAGGING:
 		for component_id_ in selected_squares:
 			var node = squares[component_id_]
 			node.position = round_position(node.position + Vector2(node.square_width / 2, node.square_height / 2))
+		if dragging_left_square == STATE_DRAGGING:
+			var nodes = []
+			for component_id_ in selected_squares:
+				nodes.append(squares[component_id_])
+			dragging_node_end.emit(nodes.duplicate()) # commit
+		set_dragging_left_sqaure(STATE_NOT_DRAGGING)
 
 func handle_mouse_motion(pos: Vector2, d_pos: Vector2):
 	if dragging_right:
 		content.position += d_pos
 		grid.offset += d_pos
-	if dragging_left_square:
+	elif dragging_left_square == STATE_DRAGGING || dragging_left_square == STATE_START_DRAGGING:
 		for square in selected_squares:
 			var node = squares[square]
 			node.position = content.to_local(content.to_global(node.position) + d_pos)
+		if dragging_left_square == STATE_START_DRAGGING:
+			set_dragging_left_sqaure(STATE_DRAGGING)
+			save_last_state(selected_squares)
+			dragging_node_start.emit(selected_squares.duplicate()) # declare
 
 func _unhandled_input(event):
 	if !enable_input:
@@ -235,14 +280,24 @@ func _on_websocket_handler_event_operate_commited(id_, ops):
 		elif op.action == "remove":
 			_delete_square_by_id(int(op.component_id_))
 		elif op.action == "modify":
-			pass
+			update_square_by_id_remote(int(op.component_id_), op.changed)
+		var component_id_ = int(op.component_id_)
+		if component_id_ in squares.keys():
+			unfreeze(squares[component_id_])
 
 func _on_websocket_handler_event_operate_declared(id_, ops):
-	pass # Replace with function body.
+	for op in ops:
+		var component_id_ = int(op.component_id_)
+		if op.action == "modify" || op.action == "remove":
+			if component_id_ in squares.keys():
+				freeze(squares[component_id_])
 
 func _on_websocket_handler_cancel_ops(ops):
 	for op in ops:
-		rollback(op.component_id_)
+		var component_id_: int = int(op.component_id_)
+		rollback(component_id_)
+		if component_id_ in squares.keys():
+			freeze(squares[component_id_])
 
 func _on_websocket_handler_update_id(response_ops):
 	for op in response_ops:

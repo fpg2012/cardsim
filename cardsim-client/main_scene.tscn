@@ -22,6 +22,8 @@ script = ExtResource("2_6etok")
 [node name="WebsocketHandler" type="Node" parent="."]
 script = ExtResource("3_wvjyw")
 
+[connection signal="dragging_node_end" from="." to="WebsocketHandler" method="_on_main_scene_dragging_node_end"]
+[connection signal="dragging_node_start" from="." to="WebsocketHandler" method="_on_main_scene_dragging_node_start"]
 [connection signal="square_added" from="." to="WebsocketHandler" method="_on_main_scene_square_added"]
 [connection signal="square_removed" from="." to="WebsocketHandler" method="_on_main_scene_square_removed"]
 [connection signal="start_connection" from="." to="WebsocketHandler" method="_on_start_connection"]
