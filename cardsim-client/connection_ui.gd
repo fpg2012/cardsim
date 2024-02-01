@@ -51,7 +51,7 @@ func _process(delta):
 func _on_label_gui_input(event):
 	if (event is InputEventMouseButton && event.is_pressed() && event.button_index == MOUSE_BUTTON_LEFT):
 		label_press_count += 1
-		if label_press_count % 6 == 5:
+		if label_press_count % 6 == 3:
 			server_edit.text = "ws://localhost:8765"
 
 func _on_button_pressed():

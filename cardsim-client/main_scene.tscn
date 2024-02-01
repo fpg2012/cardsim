@@ -22,7 +22,13 @@ script = ExtResource("2_6etok")
 [node name="WebsocketHandler" type="Node" parent="."]
 script = ExtResource("3_wvjyw")
 
+[connection signal="square_added" from="." to="WebsocketHandler" method="_on_main_scene_square_added"]
+[connection signal="square_removed" from="." to="WebsocketHandler" method="_on_main_scene_square_removed"]
 [connection signal="start_connection" from="." to="WebsocketHandler" method="_on_start_connection"]
 [connection signal="connect_button_pressed" from="ConnectionUI" to="." method="_on_connection_ui_connect_button_pressed"]
+[connection signal="cancel_ops" from="WebsocketHandler" to="." method="_on_websocket_handler_cancel_ops"]
 [connection signal="connection_failed" from="WebsocketHandler" to="." method="_on_connection_failed"]
 [connection signal="connection_successed" from="WebsocketHandler" to="." method="_on_connection_successed"]
+[connection signal="event_operate_commited" from="WebsocketHandler" to="." method="_on_websocket_handler_event_operate_commited"]
+[connection signal="event_operate_declared" from="WebsocketHandler" to="." method="_on_websocket_handler_event_operate_declared"]
+[connection signal="update_id" from="WebsocketHandler" to="." method="_on_websocket_handler_update_id"]
