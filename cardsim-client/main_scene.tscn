@@ -1,9 +1,10 @@
-[gd_scene load_steps=5 format=3 uid="uid://deu24lw0und3c"]
+[gd_scene load_steps=6 format=3 uid="uid://deu24lw0und3c"]
 
 [ext_resource type="Script" path="res://main_scene.gd" id="1_l7gqa"]
 [ext_resource type="PackedScene" uid="uid://dggdd2bdwqf3f" path="res://connection_ui.tscn" id="2_2n0wk"]
 [ext_resource type="Script" path="res://GridSystem.gd" id="2_6etok"]
 [ext_resource type="Script" path="res://WebsocketHandler.gd" id="3_wvjyw"]
+[ext_resource type="PackedScene" uid="uid://qcxerrf1pn8m" path="res://user_list_ui.tscn" id="5_2bw7a"]
 
 [node name="MainScene" type="Node2D"]
 script = ExtResource("1_l7gqa")
@@ -22,6 +23,10 @@ script = ExtResource("2_6etok")
 [node name="WebsocketHandler" type="Node" parent="."]
 script = ExtResource("3_wvjyw")
 
+[node name="UserListUI" parent="." instance=ExtResource("5_2bw7a")]
+visible = false
+z_index = 1000
+
 [connection signal="dragging_node_end" from="." to="WebsocketHandler" method="_on_main_scene_dragging_node_end"]
 [connection signal="dragging_node_start" from="." to="WebsocketHandler" method="_on_main_scene_dragging_node_start"]
 [connection signal="square_added" from="." to="WebsocketHandler" method="_on_main_scene_square_added"]
@@ -31,6 +36,8 @@ script = ExtResource("3_wvjyw")
 [connection signal="cancel_ops" from="WebsocketHandler" to="." method="_on_websocket_handler_cancel_ops"]
 [connection signal="connection_failed" from="WebsocketHandler" to="." method="_on_connection_failed"]
 [connection signal="connection_successed" from="WebsocketHandler" to="." method="_on_connection_successed"]
+[connection signal="event_join" from="WebsocketHandler" to="." method="_on_websocket_handler_event_join"]
 [connection signal="event_operate_commited" from="WebsocketHandler" to="." method="_on_websocket_handler_event_operate_commited"]
 [connection signal="event_operate_declared" from="WebsocketHandler" to="." method="_on_websocket_handler_event_operate_declared"]
+[connection signal="event_quit" from="WebsocketHandler" to="." method="_on_websocket_handler_event_quit"]
 [connection signal="update_id" from="WebsocketHandler" to="." method="_on_websocket_handler_update_id"]

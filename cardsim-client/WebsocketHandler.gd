@@ -34,6 +34,8 @@ signal cancel_ops(ops)
 signal update_id(response_ops)
 signal event_operate_declared(id_: int, ops)
 signal event_operate_commited(id_: int, ops)
+signal event_join(username: String, id_: int)
+signal event_quit(id_: int)
 
 func check_ack_seq(packet):
 	if packet['ack_seq'] != self.wait_for_ack_seq:
@@ -98,6 +100,10 @@ func handle_event(packet):
 				event_operate_declared.emit(int(packet.data.id_), packet.data.ops)
 			elif packet.data.op_state == 'commit':
 				event_operate_commited.emit(int(packet.data.id_), packet.data.ops)
+		elif packet.event == 'join':
+			event_join.emit(packet.data.username, packet.data.id_)
+		elif packet.event == 'quit':
+			event_quit.emit(packet.data.id_)
 
 # only invoke this function when the connection opened
 func send_join_packet():

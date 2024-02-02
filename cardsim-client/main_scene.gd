@@ -84,6 +84,7 @@ func deselected(node):
 
 func freeze(node):
 	deselected(node)
+	node.position = round_position(node.position)
 	node.set_freeze(true)
 
 func unfreeze(node):
@@ -162,6 +163,9 @@ func init_game_state(game_state):
 	if 'components' in game_state:
 		for component in game_state.components:
 			add_square_remote(int(component.component_id_), component)
+	if 'online' in game_state:
+		for user in game_state.online:
+			$UserListUI.add_user(user)
 
 # dragging related functions
 func set_dragging_right(is_enabled: bool):
@@ -224,7 +228,8 @@ func handle_mouse_motion(pos: Vector2, d_pos: Vector2):
 	elif dragging_left_square == STATE_DRAGGING || dragging_left_square == STATE_START_DRAGGING:
 		for square in selected_squares:
 			var node = squares[square]
-			node.position = content.to_local(content.to_global(node.position) + d_pos)
+			if !node.freezed:
+				node.position = content.to_local(content.to_global(node.position) + d_pos)
 		if dragging_left_square == STATE_START_DRAGGING:
 			set_dragging_left_sqaure(STATE_DRAGGING)
 			save_last_state(selected_squares)
@@ -276,6 +281,7 @@ func _on_connection_successed(game_state):
 	enable_input = true
 	init_game_state(game_state)
 	$ConnectionUI.visible = false
+	$UserListUI.visible = true
 
 func _on_connection_ui_connect_button_pressed(server, username, room):
 	websocket_handler.url = server
@@ -305,6 +311,8 @@ func _on_websocket_handler_event_operate_declared(id_, ops):
 func _on_websocket_handler_cancel_ops(ops):
 	for op in ops:
 		var component_id_: int = int(op.component_id_)
+		if component_id_ in squares.keys():
+			freeze(squares[component_id_])
 		rollback(component_id_)
 		if component_id_ in squares.keys():
 			freeze(squares[component_id_])
@@ -319,3 +327,12 @@ func _on_websocket_handler_update_id(response_ops):
 		squares[new_id] = node
 		if old_id in selected_squares:
 			deselected(node)
+
+func _on_websocket_handler_event_join(username, id_):
+	$UserListUI.add_user({
+		"username": username,
+		"id_": int(id_)
+	})
+
+func _on_websocket_handler_event_quit(id_):
+	$UserListUI.remove_user(int(id_))
