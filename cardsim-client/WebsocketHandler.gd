@@ -26,7 +26,7 @@ var request_buffer = {} # seq => request
 var request_callback = {} # seq => callable
 
 signal connection_failed(error: Error)
-signal connection_successed
+signal connection_successed(game_state)
 # operate signals
 #signal operate_declared(ok: bool, request)
 #signal operate_commited(ok: bool, data: Array[Dictionary], request)
@@ -59,7 +59,7 @@ func handle_accept(packet):
 		self.id = packet.data.id_
 		self.token = packet.data.token
 		game_connection_state = GameConnectionState.STATE_ESTABLISHED
-		connection_successed.emit()
+		connection_successed.emit(packet.data.game_state)
 	elif game_connection_state == GameConnectionState.STATE_ESTABLISHED:
 		var request = request_buffer[int(packet.ack_seq)]
 		if request.action == 'operate':
@@ -159,7 +159,7 @@ func dispatch(packet: Dictionary):
 		pass # error
 
 func log_info():
-	return '[%s-%d]' % [self.username, self.id]
+	return '[\"%s\"=%d @%s] ' % [self.username, self.id, Time.get_time_string_from_system()]
 
 # Called when the node enters the scene tree for the first time.
 func _ready():

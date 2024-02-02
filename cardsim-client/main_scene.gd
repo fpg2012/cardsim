@@ -155,6 +155,13 @@ func rollback(component_id_):
 	else:
 		update_square_by_id_remote(component_id_, squares_last_state[component_id_])
 
+func init_game_state(game_state):
+	if game_state == null:
+		return
+	if 'components' in game_state:
+		for component in game_state.components:
+			add_square_remote(int(component.component_id_), component)
+
 # dragging related functions
 func set_dragging_right(is_enabled: bool):
 	self.dragging_right = is_enabled # start dragging right
@@ -182,6 +189,7 @@ func handle_left_click(pos: Vector2):
 	var local_pos = round_position(content.to_local(pos))
 	set_dragging_left(true)
 	var node = query_square_by_pos(local_pos)
+	print(node)
 	if node == null: # click empty area
 		if selected_squares.is_empty():
 			add_square_local(local_pos)
@@ -251,7 +259,7 @@ func log_info():
 # Called when the node enters the scene tree for the first time.
 func _ready():
 	if DEBUG_DISABLE_SERVER:
-		_on_connection_successed()
+		_on_connection_successed(null)
 
 # Called every frame. 'delta' is the elapsed time since the previous frame.
 func _process(delta):
@@ -262,9 +270,10 @@ func _on_connection_failed(result):
 	printerr('failed to connect to server, code', result)
 	set_process(false)
 
-func _on_connection_successed():
+func _on_connection_successed(game_state):
 	set_process(true)
 	enable_input = true
+	init_game_state(game_state)
 	$ConnectionUI.visible = false
 
 func _on_connection_ui_connect_button_pressed(server, username, room):
