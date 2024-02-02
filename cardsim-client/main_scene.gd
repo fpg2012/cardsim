@@ -143,6 +143,7 @@ func delete_square_by_id_local(component_id_):
 
 # should not use this function to update component_id_
 func update_square_by_id_remote(component_id_: int, node_model):
+	node_model.component_id_ = component_id_ # important!
 	var node = squares[component_id_]
 	node.from_dict(node_model)
 	print(self.log_info() + 'remote update ' + str(node_model))

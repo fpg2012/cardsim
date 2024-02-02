@@ -50,6 +50,8 @@ class CardsimServer:
                 asyncio.create_task(self.handle_join(request, websocket))
             case 'operate':
                 asyncio.create_task(self.handle_operate(request, websocket))
+            case 'quit':
+                asyncio.create_task(self.handle_quit(request, websocket))
             case _:
                 print('ignore: ', 'invalid action')
     
@@ -128,7 +130,52 @@ class CardsimServer:
                 reason='username_used'
             )
             await websocket.send(response.to_json())
-        
+    
+    async def handle_quit(self, request, websocket):
+        '''
+        handle QUIT packet
+        '''
+        packet: QuitMessage = QuitMessage.from_dict(request)
+        auth = await self.is_authenticated(packet.id_, packet.token)
+        if not auth:
+            print('not auth')
+            return
+        ops = []
+        async with self.component_pool_lock:
+            user = self.user_pool[packet.id_]
+            for component_id_ in user.grabbed_components:
+                self.component_pool.release(component_id_)
+                ops.append(Operation(
+                    action='modify',
+                    component_id_=component_id_,
+                    changed=self.component_pool[component_id_]
+                ))
+        relayed_data = OperationRelayedData(
+            id_=packet.id_,
+            ops=ops,
+            op_state='commit'
+        )
+        relayed = EventMessage(
+            event='operate',
+            seq=self.seq,
+            data=relayed_data.to_dict()
+        )
+        await self.send_to_group(
+            filter(lambda u: u.id_ != packet.id_, self.user_pool),
+            relayed.to_json()
+        )
+        async with self.user_pool_lock:
+            self.user_pool.remove_user(packet.id_)
+        # response = AcceptMessage(data=None, seq=self.seq, ack_seq=packet.seq)
+        relayed2 = EventMessage(
+            event='quit', 
+            seq=self.seq,
+            data={
+            'id_': packet.id_
+            }
+        )
+        await self.send_to_group(self.user_pool, relayed2.to_json())
+
     
     async def handle_operate(self, request, websocket):
         '''
@@ -183,6 +230,7 @@ class CardsimServer:
                         actions.append(Operation(action='add', component_id_=op.component_id_, changed=None))
                     case 'remove' | 'modify':
                         self.component_pool.grab(op.component_id_, packet.id_)
+                        self.user_pool[packet.id_].grab(op.component_id_)
                         actions.append(Operation(action='remove', component_id_=op.component_id_, changed=None))
                     case _:
                         pass # error
@@ -239,10 +287,12 @@ class CardsimServer:
                     case 'remove':
                         self.component_pool.remove_component(op.component_id_)
                         self.component_pool.release(op.component_id_)
+                        self.user_pool[packet.id_].release(op.component_id_)
                         actions.append(op)
                     case 'modify':
                         self.component_pool.update_component(op.component_id_, op.changed)
                         self.component_pool.release(op.component_id_)
+                        self.user_pool[packet.id_].release(op.component_id_)
                         actions.append(op)
                     case _:
                         pass # error
@@ -265,9 +315,6 @@ class CardsimServer:
     async def increment_seq(self):
         async with self.seq_lock:
             self.seq += 1
-    
-    def user_leave(self, user: CardsimUser):
-        pass
     
     @property
     def game_state(self) -> dict:

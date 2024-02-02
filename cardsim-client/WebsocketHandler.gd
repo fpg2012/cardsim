@@ -112,6 +112,17 @@ func send_join_packet():
 	seq += 1
 	send(request)
 
+func send_quit_packet():
+	var request = JSON.stringify({
+		"action": "quit",
+		"id_": id,
+		"token": token,
+		"seq": seq,
+		"room_id_": room_id
+	})
+	seq += 1
+	send(request)
+
 func queue_request(request):
 	request_queue.append(request)
 	request_buffer[seq] = request
@@ -195,6 +206,7 @@ func _process(delta):
 	last_state = state
 
 func _exit_tree():
+	send_quit_packet()
 	socket.close()
 
 func _on_start_connection():

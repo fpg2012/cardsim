@@ -9,19 +9,32 @@ from utils import NumberPool
 class CardsimUserPublicProfile:
     id_: int
     username: str
+    ping: float
 
-@dataclass
 class CardsimUser:
-    id_: int
-    token: int
-    username: str
-    websocket: websockets.WebSocketServerProtocol
-    seq: int
-    online: bool = True
+
+    def __init__(self, id_: int, token: int, username: str, websocket: websockets.WebSocketServerProtocol, seq: int, online: bool = True, grabbed_components: set[int] = set()) -> None:
+        self.id_: int = id_
+        self.token: int = token
+        self.username: str = username
+        self.websocket: websockets.WebSocketServerProtocol = websocket
+        self.seq: int = seq
+        self.online: bool = online
+        self.grabbed_components: set = grabbed_components
 
     @property
     def public_profile(self) -> CardsimUserPublicProfile:
-        return CardsimUserPublicProfile(id_=self.id_, username=self.username)
+        return CardsimUserPublicProfile(id_=self.id_, username=self.username, ping=self.ping)
+    
+    def grab(self, component_id_: int):
+        self.grabbed_components.add(component_id_)
+    
+    def release(self, component_id_: int):
+        self.grabbed_components.discard(component_id_)
+    
+    @property
+    def ping(self) -> float:
+        self.websocket.latency
 
 class CardsimUserPool(Iterable):
 
@@ -56,6 +69,15 @@ class CardsimUserPool(Iterable):
         self.id_pool.add(id_)
         self.token_pool.add(token)
         return new_user
+
+    def remove_user(self, id_: int):
+        if id_ in self.id_pool:
+            token = self.users[id_].token
+            username = self.users[id_].username
+            self.usernames.discard(username)
+            del self.users[id_]
+            self.id_pool.free(id_)
+            self.token_pool.free(token)
     
     def public_profiles(self):
         for user in self.users.values():

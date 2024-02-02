@@ -21,6 +21,13 @@ class CardsimComponentPool(Iterable):
         id_ = self.id_pool.allocate(time.time())
 
         new_component = component
+
+        # never update the component_id_ inside component structure unless protocol or client behavior changed
+        # clients rely on "old" component_id_ in the component structure to behave correctly
+        # they will replace old component_id_ when server responded (event=>operate=>commit)
+        #
+        # new_component['component_id_'] = id_ 
+        
         self.components[id_] = new_component
 
         self.id_pool.add(id_)
@@ -78,4 +85,4 @@ class CardsimComponentPool(Iterable):
             yield component
     
     def __getitem__(self, index: int) -> int:
-        return self.components[int]
+        return self.components[index]
