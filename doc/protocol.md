@@ -117,18 +117,14 @@ sent by CLIENT:
     "action": "quit",
     "id_": P,
     "token": Q,
-    "seq": N
+    "seq": N,
+    "room_id_": R
 }
 ```
 
 accepted:
 
-```
-{
-    "action": "accept",
-    "ack_seq": N
-}
-```
+NO RESPONSE
 
 rejected:
 
@@ -161,7 +157,8 @@ sent by CLIENT:
     "id_": P,
     "to_kick_id_": P',
     "token": Q,
-    "seq": N
+    "seq": N,
+    "room_id_": R
 }
 ```
 
@@ -278,7 +275,7 @@ relayed:
     "action": "event",
     "event": "operate",
     "data": {OperationRelayedData},
-    seq: M
+    "seq": M
 }
 ```
 
