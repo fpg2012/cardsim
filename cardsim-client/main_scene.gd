@@ -84,7 +84,7 @@ func deselected(node):
 
 func freeze(node):
 	deselected(node)
-	node.position = round_position(node.position)
+	node.position = round_position(node.position + Vector2(node.square_width / 2, node.square_width / 2))
 	node.set_freeze(true)
 
 func unfreeze(node):
