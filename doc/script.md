@@ -34,11 +34,34 @@
 
 ## 脚本包结构
 
-> TODO. 本节内容尚待确定
-
 脚本包是整合脚本及其所需的资源的一个文件夹或压缩包。资源主要指材质和声音等内置组件显示需要引用的内容。
 
-TODO
+脚本包应放置在Zip压缩包中，压缩包结构示例如下（`pack.zip`）：
+
+```
+.
+├── manifest.json
+├── script.lua
+└── textures/
+```
+
+`manifest.json`是一个包含脚本包基本信息的JSON文件，编码须为UTF-8。示例如下
+
+```
+{
+    "package-name": "Chess",
+    "version": "0.2.1",
+    "author": "nth233"
+}
+```
+
+`script.lua`为lua脚本。脚本必须为单个文件。
+
+`textures`为放置材质的文件夹。材质宜为PNG格式，可以有多个文件。
+
+除了压缩包`pack.zip`外，还可以另外提供`pack.sig`、`pack.sha256`等文件便于用户检查签名、检查完整性。
+
+> 注：当前客户端没有支持自动检查checksum的计划。
 
 ## 自定义事件表
 
@@ -96,4 +119,5 @@ custom_events = {
 | `si_get_component`  | component_id_ | 获取组件                      |
 | `si_operate`        | ops           | 改变组件状态，ops内容参见protocol.md |
 
+> 注：脚本中对组件的操作，会覆盖客户端自动生成的ops。例如，当客户端移动某一组件并通知脚本，脚本又对这一组件做了修改，那么客户端以脚本返回的修改为准。
 
