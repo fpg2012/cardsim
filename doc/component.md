@@ -27,6 +27,7 @@
 5. `null` field is equavelant to the absence
 6. `|` means or
 7. `n.nn`, `m.mm` etc. imply some float number
+8. `[..{x}]` implies an array of {x}
 
 ## Card
 
@@ -49,9 +50,7 @@
 1. 点击
 2. 双击/选中
 3. 拖动/移动
-4. 新增
 5. 删除
-6. 翻面
 
 ## Deck
 
@@ -74,7 +73,6 @@
 
 1. 点击
 2. 双击/选中
-3. 新增
 4. 删除
 5. 抽牌
 6. 塞牌
@@ -116,7 +114,7 @@ class CardsimPos2f:
     y: float # between 0 and 1
 ```
 
-### Text
+### Texture
 
 ```python
 @dataclass
@@ -124,4 +122,17 @@ class Texture:
     file: Path
     offset: CardsimPos2f
     size: CardsimPos2f
+```
+
+## 脚本定义的交互方式
+
+详见脚本相关文档`script.md`。
+
+## GameState的结构
+
+```
+{
+    "online": [..{UserProfile}],
+    "components": [..{Component}]
+}
 ```
